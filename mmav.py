@@ -36,7 +36,7 @@ class MaomiAV:
         self.get_bs()
         self.get_m3u8()
         self.temp_dir = tempfile.mkdtemp(prefix="mmav_")
-        dload_file_all(self.jobs, self.temp_dir, (self.proxies, 10), self.m3u8_tss_urls)
+        dload_file_all(self.jobs, self.temp_dir, self.proxies, self.m3u8_tss_urls)
         self.merge_ts()
         remove_path(self.temp_dir)
         print("\nDone!")
@@ -82,16 +82,10 @@ class MaomiAV:
             i = 0
             for names in names_split:
                 files_split.append("tmp.%s" % i)
-                # ~ cmd_str = "copy /b %s %s >nul" % ("+".join(names), files_split[-1])
-                # ~ os.system(cmd_str)
                 merge_files(names, files_split[-1])
                 i += 1
-            # ~ cmd_str = "copy /b %s %s >nul" % ("+".join(files_split), dst_filename)
-            # ~ os.system(cmd_str)
             merge_files(files_split, dst_filename)
         else:
-            # ~ cmd_str = "copy /b %s %s >nul" % ("+".join(self.m3u8_tss_names), dst_filename)
-            # ~ os.system(cmd_str)
             merge_files(self.m3u8_tss_names, dst_filename)
         file2dir(os.path.join(self.temp_dir, dst_filename), workdir_bak)
         os.chdir(workdir_bak)
@@ -119,14 +113,13 @@ def select_bs4_parser():
         except ModuleNotFoundError:
             return
 
-def dload_file_all(max_threads_num, temp_dir, pars, urls):
+def dload_file_all(max_threads_num, temp_dir, proxies, urls):
 
-    def dload_file(pars, url):
+    def dload_file(proxies, url):
         # 下载文件
-        proxies, req_timeout = pars
         file_name = url.split("/")[-1]
         try:
-            r = requests.get(url, timeout=req_timeout,
+            r = requests.get(url, timeout=15,
                              proxies={"http": proxies, "https": proxies})
         except:
             try:
@@ -141,9 +134,7 @@ def dload_file_all(max_threads_num, temp_dir, pars, urls):
     dl_done_num = 0
     # 神奇的多线程下载
     with ThreadPoolExecutor(max_threads_num) as executor1:
-        for req in executor1.map(dload_file,
-                                 [pars] * len(urls),
-                                 urls):
+        for req in executor1.map(dload_file, [proxies] * len(urls), urls):
             fcontent, file_name, status_code = req
             if fcontent:
                 dload_file = os.path.join(temp_dir, file_name)
