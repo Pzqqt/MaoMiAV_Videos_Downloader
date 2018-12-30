@@ -29,8 +29,7 @@ class MaomiAV:
         self.bs4_parser = select_bs4_parser()
         if not self.bs4_parser:
             print("\nFailed to run this program!")
-            print("\nPlease install at least one parser "
-                  "in \"lxml\" and \"html5lib\"!")
+            print("\nPlease install at least one parser in \"lxml\" and \"html5lib\"!")
             sys.exit()
 
     def set_jobs(self, jobs):
@@ -139,12 +138,10 @@ def dload_file_all(max_threads_num, temp_dir, proxies, urls):
         # 下载文件
         file_name = url.split("/")[-1]
         try:
-            r = requests.get(url, timeout=15,
-                             proxies={"http": proxies, "https": proxies})
+            r = requests.get(url, timeout=15, proxies={"http": proxies, "https": proxies})
         except:
             try:
-                r = requests.get(url, timeout=15,
-                                 proxies={"http": proxies, "https": proxies})
+                r = requests.get(url, timeout=15, proxies={"http": proxies, "https": proxies})
             except:
                 return "", file_name, "timeout"
         if r.ok:
@@ -158,15 +155,13 @@ def dload_file_all(max_threads_num, temp_dir, proxies, urls):
             fcontent, file_name, status_code = req
             if fcontent:
                 dload_file = os.path.join(temp_dir, file_name)
-                with open(dload_file, 'wb') as f:
+                with open(dload_file, "wb") as f:
                     f.write(fcontent)
                 dl_done_num += 1
-                sys.stderr.write("Progress: [%s / %s] (%s%%)\r"
-                                 % (dl_done_num, len(urls),
-                                    dl_done_num * 100 // len(urls)))
+                sys.stderr.write("Progress: [ %s%% %s/%s ]\r"
+                                 % (dl_done_num * 100 // len(urls), dl_done_num, len(urls)))
             else:
-                raise Exception("\nFailed to download %s! Status: %s\n"
-                                % (file_name, status_code))
+                raise Exception("\nFailed to download %s! Status: %s\n" % (file_name, status_code))
         clean_line()
 
 def merge_files(files, dst):
