@@ -23,7 +23,7 @@ class MaomiAV:
         self.url = url
         if "play-" not in self.url:
             self.url = "%s/play-%s" % tuple(self.url.rsplit("/", 1))
-        self.jobs = int(jobs)
+        self.jobs = self.set_jobs(jobs)
         self.road = self.set_road(road)
         self.proxies = proxies
         self.bs4_parser = select_bs4_parser()
@@ -32,6 +32,16 @@ class MaomiAV:
             print("\nPlease install at least one parser "
                   "in \"lxml\" and \"html5lib\"!")
             sys.exit()
+
+    def set_jobs(self, jobs):
+        if jobs <= 1:
+            return 1
+        if jobs >= 32:
+            return 32
+        jobs_list = [2**x for x in range(6)]
+        for x in range(5):
+            if jobs_list[x] <= jobs < jobs_list[x+1]:
+                return jobs_list[x]
 
     def set_road(self, road):
         if road == 1:
@@ -218,7 +228,7 @@ def remove_path(path):
 def main():
     parser = ArgumentParser()
     parser.add_argument("url", help="url for webview")
-    parser.add_argument("-j", "--jobs", type=int, default=4, help="number of recipes (jobs)(default: 4)")
+    parser.add_argument("-j", "--jobs", type=int, default=4, help="number of recipes (jobs)(available: 1~32)(default: 4)")
     parser.add_argument("-r", "--road", type=int, default=2, help="request road(available: 1~3)(default: 2)")
     parser.add_argument("-p", "--proxies", default="", help="use proxy (address:port)(default: None)")
 
