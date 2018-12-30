@@ -19,11 +19,12 @@ class MaomiAV:
                        "202.94 Safari/537.36")
     }
 
-    def __init__(self, url, jobs, proxies):
+    def __init__(self, url, jobs, road, proxies):
         self.url = url
         if "play-" not in self.url:
             self.url = "%s/play-%s" % tuple(self.url.rsplit("/", 1))
         self.jobs = int(jobs)
+        self.road = self.set_road(road)
         self.proxies = proxies
         self.bs4_parser = select_bs4_parser()
         if not self.bs4_parser:
@@ -31,6 +32,15 @@ class MaomiAV:
             print("\nPlease install at least one parser "
                   "in \"lxml\" and \"html5lib\"!")
             sys.exit()
+
+    def set_road(self, road):
+        if road == 1:
+            return "head"
+        if road == 2:
+            return "head1"
+        if road == 3:
+            return "head2"
+        return "head1"
 
     def run(self):
         self.get_bs()
@@ -56,7 +66,7 @@ class MaomiAV:
             if "var m3u8_host2" in line:
                 self.m3u8_info["head2"] = line.split()[-1][1:-2]
         m3u8_req = requests.get(
-            url=self.m3u8_info["head1"] + self.m3u8_info["end"],
+            url=self.m3u8_info[self.road] + self.m3u8_info["end"],
             headers=self.headers,
             timeout=self.req_timeout,
             proxies={"http": self.proxies, "https": self.proxies}
@@ -66,7 +76,7 @@ class MaomiAV:
         self.m3u8_tss_urls = [self.merge_m3u8_url(line.strip()) for line in self.m3u8_tss_names]
 
     def merge_m3u8_url(self, file_name):
-        return self.m3u8_info["head1"] + self.m3u8_info["end"].rsplit("/", 1)[0] + "/" + file_name
+        return self.m3u8_info[self.road] + self.m3u8_info["end"].rsplit("/", 1)[0] + "/" + file_name
 
     def merge_ts(self):
         dst_filename = adj_dir_name(self.bs.find("title").get_text()) + ".mp4"
@@ -209,11 +219,12 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("url", help="url for webview")
     parser.add_argument("-j", "--jobs", type=int, default=4, help="number of recipes (jobs)(default: 4)")
+    parser.add_argument("-r", "--road", type=int, default=2, help="request road(available: 1~3)(default: 2)")
     parser.add_argument("-p", "--proxies", default="", help="use proxy (address:port)(default: None)")
 
     args = parser.parse_args()
 
-    a = MaomiAV(args.url, args.jobs, args.proxies)
+    a = MaomiAV(args.url, args.jobs, args.road, args.proxies)
     a.run()
 
 if __name__ == '__main__':
