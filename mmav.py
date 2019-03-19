@@ -31,7 +31,6 @@ class MaomiAV:
             print("\nFailed to run this program!")
             print("\nPlease install at least one parser in \"lxml\" and \"html5lib\"!")
             sys.exit()
-        self.video_url = ""
 
     @staticmethod
     def set_jobs(jobs):
@@ -55,16 +54,16 @@ class MaomiAV:
         return "head1"
 
     def run(self):
-        self.get_bs()
+        self.bs = self.get_bs()
         self.get_m3u8()
         self.temp_dir = tempfile.mkdtemp(prefix="mmav_")
-        if self.video_url:
+        self.dst_filename = self.adj_file_name(self.get_title()) + ".mp4"
+        print("File name: " + self.dst_filename)
+        if hasattr(self, "video_url"):
             dload_file_all(self.jobs, self.temp_dir, self.proxies, [self.video_url,])
         else:
             dload_file_all(self.jobs, self.temp_dir, self.proxies, self.m3u8_tss_urls)
-        self.dst_filename = self.adj_file_name(self.get_title()) + ".mp4"
-        print("File name: " + self.dst_filename)
-        if self.video_url:
+        if hasattr(self, "video_url"):
             file2file(os.path.join(self.temp_dir, os.listdir(self.temp_dir)[0]),
                       os.path.join(os.getcwd(), self.dst_filename))
         else:
@@ -81,7 +80,7 @@ class MaomiAV:
                            timeout=self.req_timeout,
                            proxies={"http": self.proxies, "https": self.proxies})
         req.encoding = "utf-8"
-        self.bs = BeautifulSoup(req.text, self.bs4_parser)
+        return BeautifulSoup(req.text, self.bs4_parser)
 
     def get_m3u8(self):
         m3u8_script = self.get_m3u8_script()
