@@ -171,8 +171,7 @@ def select_bs4_parser():
 
 def dload_file_all(max_threads_num, temp_dir, proxies, urls):
 
-    def dload_file(proxies, url):
-        # 下载文件
+    def dload_file(url):
         file_name = url.split("/")[-1]
         try:
             r = requests.get(url, timeout=15, proxies={"http": proxies, "https": proxies})
@@ -180,26 +179,26 @@ def dload_file_all(max_threads_num, temp_dir, proxies, urls):
             try:
                 r = requests.get(url, timeout=15, proxies={"http": proxies, "https": proxies})
             except:
-                return "", file_name, "timeout"
+                return False, file_name, "timeout"
         if r.ok:
-            return r.content, file_name, r.status_code
-        return "", file_name, r.status_code
+            dload_file = os.path.join(temp_dir, file_name)
+            with open(dload_file, 'wb') as f:
+                f.write(r.content)
+            return True, file_name, r.status_code
+        return False, file_name, r.status_code
 
     dl_done_num = 0
     # 神奇的多线程下载
     with ThreadPoolExecutor(max_threads_num) as executor1:
-        for req in executor1.map(dload_file, [proxies] * len(urls), urls):
-            fcontent, file_name, status_code = req
-            if fcontent:
-                dload_file = os.path.join(temp_dir, file_name)
-                with open(dload_file, "wb") as f:
-                    f.write(fcontent)
+        for result in executor1.map(dload_file, urls):
+            if result[0]:
                 dl_done_num += 1
                 sys.stderr.write("Progress: [ %s%% %s/%s ]\r"
                                  % (dl_done_num * 100 // len(urls), dl_done_num, len(urls)))
             else:
-                raise Exception("Failed to download %s! Status: %s\n" % (file_name, status_code))
-        clean_line()
+                raise Exception("Failed to download %s! Status: %s\n"
+                                % (result[1], result[2]))
+    clean_line()
 
 def clean_line():
     # 清行
