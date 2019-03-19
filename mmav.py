@@ -62,7 +62,7 @@ class MaomiAV:
             dload_file_all(self.jobs, self.temp_dir, self.proxies, [self.video_url,])
         else:
             dload_file_all(self.jobs, self.temp_dir, self.proxies, self.m3u8_tss_urls)
-        self.dst_filename = self.adj_file_name(self.bs.find("title").get_text()) + ".mp4"
+        self.dst_filename = self.adj_file_name(self.get_title()) + ".mp4"
         print("File name: " + self.dst_filename)
         if self.video_url:
             file2file(os.path.join(self.temp_dir, os.listdir(self.temp_dir)[0]),
@@ -117,6 +117,9 @@ class MaomiAV:
         if "var video" not in script_first:
             raise Exception("Unsupported url!")
         return script_first.split("\n")
+
+    def get_title(self):
+        return self.bs.find("span", {"class": "cat_pos_l"}).find_all("a")[-1].get_text()
 
     def merge_m3u8_url(self, file_name):
         return self.m3u8_info[self.road] + self.m3u8_info["end"].rsplit("/", 1)[0] + "/" + file_name
