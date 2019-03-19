@@ -249,7 +249,7 @@ def remove_path(path):
 def main():
     parser = ArgumentParser()
     parser.add_argument("url", help="url for webview")
-    parser.add_argument("-j", "--jobs", type=int, default=4, help="number of recipes (jobs)(available: 1~32)(default: 4)")
+    parser.add_argument("-j", "--jobs", type=int, default=8, help="number of recipes (jobs)(available: 1~32)(default: 8)")
     parser.add_argument("-r", "--road", type=int, default=2, help="request road(available: 1~3)(default: 2)")
     parser.add_argument("-p", "--proxies", default="", help="use proxy (address:port)(default: None)")
 
