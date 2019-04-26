@@ -198,6 +198,7 @@ def dload_file_all(max_threads_num, temp_dir, proxies, urls):
                 sys.stderr.write("Progress: [ %s%% %s/%s ]\r"
                                  % (dl_done_num * 100 // len(urls), dl_done_num, len(urls)))
             else:
+                cleanup()
                 raise Exception("Failed to download %s! Status: %s\n"
                                 % (result[1], result[2]))
     clean_line()
@@ -244,6 +245,12 @@ def remove_path(path):
         shutil.rmtree(path)
     elif os.path.exists(path):
         os.remove(path)
+
+def cleanup():
+    # 清理临时目录&文件
+    for f in os.listdir(tempfile.gettempdir()):
+        if f.startswith("mmav_"):
+            remove_path(os.path.join(tempfile.gettempdir(), f))
 
 def main():
     parser = ArgumentParser()
