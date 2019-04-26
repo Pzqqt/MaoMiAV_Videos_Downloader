@@ -90,12 +90,15 @@ class MaomiAV:
                 continue
             if "var video" in line:
                 self.m3u8_info["end"] = line.split()[-1][1:-2]
-            if "var m3u8_host" in line:
-                self.m3u8_info["head"] = line.split()[-1][1:-2]
-            if "var m3u8_host1" in line:
+            elif "var m3u8_host1" in line:
                 self.m3u8_info["head1"] = line.split()[-1][1:-2]
-            if "var m3u8_host2" in line:
+            elif "var m3u8_host2" in line:
                 self.m3u8_info["head2"] = line.split()[-1][1:-2]
+            elif "var m3u8_host " in line:
+                self.m3u8_info["head"] = line.split()[-1][1:-2]
+        if self.m3u8_info[self.road] == "":
+            # 如果所选线路不可用 则强制使用线路1
+            self.road = "head"
         if self.m3u8_info["end"].endswith(".m3u8"):
             m3u8_req = requests.get(
                 url=self.m3u8_info[self.road] + self.m3u8_info["end"],
