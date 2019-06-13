@@ -134,11 +134,9 @@ class MaomiAV:
             names_split = [self.m3u8_tss_names[i:100+i]
                            for i in range(0, len(self.m3u8_tss_names), 100)]
             files_split = []
-            i = 0
-            for names in names_split:
+            for i, names in enumerate(names_split):
                 files_split.append("tmp.%s" % i)
                 self.merge_files(names, files_split[-1])
-                i += 1
             self.merge_files(files_split, self.dst_filename)
         else:
             self.merge_files(self.m3u8_tss_names, self.dst_filename)
