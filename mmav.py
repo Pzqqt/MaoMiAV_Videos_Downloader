@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import shutil
+from time import sleep
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 from argparse import ArgumentParser
@@ -15,8 +16,8 @@ class MaomiAV:
     req_timeout = 10
     headers = {
         "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple"
-                       "WebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3"
-                       "202.94 Safari/537.36")
+                       "WebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3"
+                       "770.142 Safari/537.36")
     }
 
     def __init__(self, url, jobs, road, proxies):
@@ -27,10 +28,6 @@ class MaomiAV:
         self.road = self.set_road(road)
         self.proxies = proxies
         self.bs4_parser = select_bs4_parser()
-        if not self.bs4_parser:
-            print("\nFailed to run this program!")
-            print("\nPlease install at least one parser in \"lxml\" and \"html5lib\"!")
-            sys.exit()
 
     @staticmethod
     def set_jobs(jobs):
@@ -60,7 +57,7 @@ class MaomiAV:
         self.dst_filename = self.adj_file_name(self.get_title()) + ".mp4"
         print("File name: " + self.dst_filename)
         if hasattr(self, "video_url"):
-            dload_file_all(self.jobs, self.temp_dir, self.proxies, [self.video_url,])
+            dload_file_all(1, self.temp_dir, self.proxies, [self.video_url,])
         else:
             dload_file_all(self.jobs, self.temp_dir, self.proxies, self.m3u8_tss_urls)
         if hasattr(self, "video_url"):
@@ -170,44 +167,33 @@ def select_bs4_parser():
             del html5lib
             return "html5lib"
         except ModuleNotFoundError:
-            return
+            print("\nFailed to run this program!")
+            print("\nPlease install at least one parser in \"lxml\" and \"html5lib\"!")
+            sys.exit(1)
 
 def dload_file_all(max_threads_num, temp_dir, proxies, urls):
 
     def dload_file(url):
         file_name = url.split("/")[-1]
-        try:
-            r = requests.get(url, timeout=15, proxies={"http": proxies, "https": proxies})
-        except:
+        while True:
+            print(" . Request %s..." % file_name)
             try:
                 r = requests.get(url, timeout=15, proxies={"http": proxies, "https": proxies})
             except:
-                return False, file_name, "timeout"
-        if r.ok:
-            dload_file = os.path.join(temp_dir, file_name)
-            with open(dload_file, 'wb') as f:
+                print(" ! Request %s timeout! Try again after 5s..." % file_name)
+                sleep(5)
+                continue
+            if not r.ok:
+                print(" ! Request %s %s! Try again after 5s..." % (file_name, r.status_code))
+                sleep(5)
+                continue
+            with open(os.path.join(temp_dir, file_name), 'wb') as f:
                 f.write(r.content)
-            return True, file_name, r.status_code
-        return False, file_name, r.status_code
+            print(" - Download %s OK!" % file_name)
+            return
 
-    dl_done_num = 0
-    # 神奇的多线程下载
     with ThreadPoolExecutor(max_threads_num) as executor1:
-        for result in executor1.map(dload_file, urls):
-            if result[0]:
-                dl_done_num += 1
-                sys.stderr.write("Progress: [ %s%% %s/%s ]\r"
-                                 % (dl_done_num * 100 // len(urls), dl_done_num, len(urls)))
-            else:
-                cleanup()
-                raise Exception("Failed to download %s! Status: %s\n"
-                                % (result[1], result[2]))
-    clean_line()
-
-def clean_line():
-    # 清行
-    exec("sys.stderr.write(\'%%-%ss\\r\' %% \" \")"
-         % os.get_terminal_size().columns)
+        executor1.map(dload_file, urls)
 
 def mkdir(path):
     # 创建目录
@@ -246,12 +232,6 @@ def remove_path(path):
         shutil.rmtree(path)
     elif os.path.exists(path):
         os.remove(path)
-
-def cleanup():
-    # 清理临时目录&文件
-    for f in os.listdir(tempfile.gettempdir()):
-        if f.startswith("mmav_"):
-            remove_path(os.path.join(tempfile.gettempdir(), f))
 
 def main():
     parser = ArgumentParser()
