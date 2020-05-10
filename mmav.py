@@ -113,6 +113,8 @@ class MaomiAV:
 
     def get_m3u8_script(self):
         script_first = self.bs.head.script.get_text()
+        if not script_first:
+            script_first = self.bs.head.script.next_element
         if "var video" not in script_first:
             raise Exception("Unsupported url!")
         return script_first.split("\n")
