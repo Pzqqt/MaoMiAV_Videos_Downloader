@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import requests
 import os
 import sys
 import tempfile
 import shutil
+import re
 from time import sleep
-from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 from argparse import ArgumentParser
+
+import requests
+from bs4 import BeautifulSoup
+
 
 class MaomiAV:
 
@@ -82,18 +85,21 @@ class MaomiAV:
     def get_m3u8(self):
         m3u8_script = self.get_m3u8_script()
         self.m3u8_info = {}
-        for line in m3u8_script:
-            if not line.strip():
-                continue
-            if "var video" in line:
-                self.m3u8_info["end"] = line.split()[-1][1:-2]
-            elif "var m3u8_host1" in line:
-                self.m3u8_info["head1"] = line.split()[-1][1:-2]
-            elif "var m3u8_host2" in line:
-                self.m3u8_info["head2"] = line.split()[-1][1:-2]
-            elif "var m3u8_host " in line:
-                self.m3u8_info["head"] = line.split()[-1][1:-2]
-        if self.m3u8_info[self.road] == "":
+        re_pattern = (
+            'var video[\s]*=[\s]*[\'\"](.*?)[\'\"];[\s]*'
+            'var m3u8_host[\s]*=[\s]*[\'\"](.*?)[\'\"];[\s]*'
+            'var m3u8_host1[\s]*=[\s]*[\'\"](.*?)[\'\"];[\s]*'
+            'var m3u8_host2[\s]*=[\s]*[\'\"](.*?)[\'\"];'
+        )
+        re_result = re.search(re_pattern, m3u8_script)
+        try:
+            self.m3u8_info["end"] = re_result.group(1)
+            self.m3u8_info["head"] = re_result.group(2)
+            self.m3u8_info["head1"] = re_result.group(3)
+            self.m3u8_info["head2"] = re_result.group(4)
+        except:
+            pass
+        if not self.m3u8_info.get(self.road):
             # 如果所选线路不可用 则强制使用线路1
             self.road = "head"
         if self.m3u8_info["end"].endswith(".m3u8"):
@@ -104,8 +110,16 @@ class MaomiAV:
                 proxies={"http": self.proxies, "https": self.proxies}
             )
             m3u8_req.encoding = "utf-8"
-            self.m3u8_tss_names = [line.strip() for line in m3u8_req.text.split() if not line.startswith("#")]
-            self.m3u8_tss_urls = [self.merge_m3u8_url(line.strip()) for line in self.m3u8_tss_names]
+            self.m3u8_tss_names = [line.strip() for line in m3u8_req.text.splitlines() if not line.startswith("#")]
+            self.m3u8_tss_urls = []
+            for line in self.m3u8_tss_names:
+                line = line.strip()
+                if not line:
+                    continue
+                if line.startswith("http"):
+                    self.m3u8_tss_urls.append(line.strip())
+                else:
+                    self.m3u8_tss_urls.append(self.merge_m3u8_url(line.strip()))
         elif self.m3u8_info["end"].endswith(".mp4"):
             self.video_url = self.m3u8_info[self.road] + self.m3u8_info["end"]
         else:
@@ -115,9 +129,7 @@ class MaomiAV:
         script_first = self.bs.head.script.get_text()
         if not script_first:
             script_first = self.bs.head.script.next_element
-        if "var video" not in script_first:
-            raise Exception("Unsupported url!")
-        return script_first.split("\n")
+        return script_first
 
     def get_title(self):
         return self.bs.find("span", {"class": "cat_pos_l"}).find_all("a")[-1].get_text()
