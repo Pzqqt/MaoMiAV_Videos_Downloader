@@ -73,17 +73,14 @@ class MaomiAV:
 
     def parse_m3u8_script(self, m3u8_script):
         m3u8_info = {}
-        re_pattern = (
-            r'var video[\s]*=[\s]*[\'\"](.*?)[\'\"];[\s]*'
-            r'var m3u8_host[\s]*=[\s]*[\'\"](.*?)[\'\"];[\s]*'
-            r'var m3u8_host1[\s]*=[\s]*[\'\"](.*?)[\'\"];[\s]*'
-            r'var m3u8_host2[\s]*=[\s]*[\'\"](.*?)[\'\"];'
-        )
-        re_result = re.search(re_pattern, m3u8_script)
-        m3u8_info["end"] = re_result.group(1)
-        m3u8_info["head"] = re_result.group(2)
-        m3u8_info["head1"] = re_result.group(3)
-        m3u8_info["head2"] = re_result.group(4)
+        re_pattern_video = r'var video[\s]*=[\s]*[\'\"](.*?)[\'\"];'
+        re_pattern_host = r'var m3u8_host[\s]*=[\s]*[\'\"](.*?)[\'\"];'
+        re_pattern_host1 = r'var m3u8_host1[\s]*=[\s]*[\'\"](.*?)[\'\"];'
+        re_pattern_host2 = r'var m3u8_host2[\s]*=[\s]*[\'\"](.*?)[\'\"];'
+        m3u8_info["end"] = re.search(re_pattern_video, m3u8_script).group(1)
+        m3u8_info["head"] = re.search(re_pattern_host, m3u8_script).group(1)
+        m3u8_info["head1"] = re.search(re_pattern_host1, m3u8_script).group(1)
+        m3u8_info["head2"] = re.search(re_pattern_host2, m3u8_script).group(1)
         if not m3u8_info.get(self.road):
             # 如果所选线路不可用 则强制使用线路1
             self.road = "head"
