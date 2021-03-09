@@ -73,20 +73,19 @@ class MaomiAV:
 
     def parse_m3u8_script(self, m3u8_script):
         m3u8_info = {}
-        re_pattern_video = r'var video[\s]*=[\s]*[\'\"](.*?)[\'\"];'
-        re_pattern_host = r'var m3u8_host[\s]*=[\s]*[\'\"](.*?)[\'\"];'
-        re_pattern_host1 = r'var m3u8_host1[\s]*=[\s]*[\'\"](.*?)[\'\"];'
-        re_pattern_host2 = r'var m3u8_host2[\s]*=[\s]*[\'\"](.*?)[\'\"];'
-        m3u8_info["end"] = re.search(re_pattern_video, m3u8_script).group(1)
-        m3u8_info["head"] = re.search(re_pattern_host, m3u8_script).group(1)
-        m3u8_info["head1"] = re.search(re_pattern_host1, m3u8_script).group(1)
-        m3u8_info["head2"] = re.search(re_pattern_host2, m3u8_script).group(1)
+        rep_video = r'var video[\s]*=[\s]*[\'\"](.*?)[\'\"];'
+        rep_host = r'var m3u8_host[\s]*=[\s]*[\'\"](.*?)[\'\"];'
+        rep_host1 = r'var m3u8_host1[\s]*=[\s]*[\'\"](.*?)[\'\"];'
+        rep_host2 = r'var m3u8_host2[\s]*=[\s]*[\'\"](.*?)[\'\"];'
+        for key, var in [("end", rep_video), ("head", rep_host), ("head1", rep_host1), ("head2", rep_host2)]:
+            re_match = re.search(var, m3u8_script)
+            if not re_match:
+                raise Exception("Unsupported url!")
+            m3u8_info[key] = re_match.group(1)
         if not m3u8_info.get(self.road):
             # 如果所选线路不可用 则强制使用线路1
             self.road = "head"
-        if m3u8_info["end"].endswith(".m3u8"):
-            return m3u8_info
-        raise Exception("Unsupported url!")
+        return m3u8_info
 
 
 def select_bs4_parser():
