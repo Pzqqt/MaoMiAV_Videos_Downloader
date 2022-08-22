@@ -53,12 +53,10 @@ class M3u8Downloader:
                 key_content=key_content,
             )
             print("\nMerge files...")
-            self.merge_ts(
-                temp_dir=temp_dir,
-                src_files=file_list,
-                dst_file=self.output
-            )
-            file2dir(os.path.join(temp_dir, self.output), os.getcwd())
+            with open(os.path.join(os.getcwd(), self.output), "wb") as f:
+                for f_ts in file_list:
+                    with open(os.path.join(temp_dir, f_ts), "rb") as f2:
+                        f.write(f2.read())
         finally:
             remove_path(temp_dir)
         print("\nDone!")
@@ -126,36 +124,6 @@ class M3u8Downloader:
         else:
             index = 0
         return stream_list[index]["sub_url"]
-
-    @classmethod
-    def merge_ts(cls, temp_dir, src_files, dst_file):
-        pwd_bak = os.getcwd()
-        os.chdir(temp_dir)
-        try:
-            if len(src_files) > 100:
-                # 列表分割
-                names_split = [
-                    src_files[i:100+i]
-                    for i in range(0, len(src_files), 100)
-                ]
-                files_split = []
-                for i, names in enumerate(names_split):
-                    files_split.append("tmp_%s.mp4" % i)
-                    cls.merge_files(names, files_split[-1])
-                cls.merge_files(files_split, dst_file)
-            else:
-                cls.merge_files(src_files, dst_file)
-        finally:
-            os.chdir(pwd_bak)
-
-    @staticmethod
-    def merge_files(files, dst):
-        # 合并文件
-        if os.name == "nt":
-            cmd_str = "copy /b %s %s >nul" % ("+".join(files), dst)
-        else:
-            cmd_str = "cat %s > %s" % (" ".join(files), dst)
-        os.system(cmd_str)
 
     @staticmethod
     def adj_file_name(file_name):
