@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from argparse import ArgumentParser
 
 import requests
+from Crypto.Cipher import AES
 
 REQ_HEADERS = {
     "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -165,6 +166,10 @@ class M3u8Downloader:
 
 
 def download_file_all(max_threads_num, temp_dir, proxies, urls, key_method, key_content):
+    if key_method and key_content:
+        cryptor = AES.new(key_content, AES.MODE_CBC, key_content)
+    else:
+        cryptor = None
 
     def download_file(url, file_name):
         while True:
@@ -196,11 +201,6 @@ def download_file_all(max_threads_num, temp_dir, proxies, urls, key_method, key_
             print(" - Download %s OK!" % file_name)
             return
 
-    if key_method and key_content:
-        from Crypto.Cipher import AES
-        cryptor = AES.new(key_content, AES.MODE_CBC, key_content)
-    else:
-        cryptor = None
     file_list = [str(x) + ".ts" for x in range(len(urls))]
     with ThreadPoolExecutor(max_threads_num) as executor1:
         executor1.map(download_file, urls, file_list)
