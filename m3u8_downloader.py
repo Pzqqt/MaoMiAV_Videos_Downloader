@@ -64,6 +64,16 @@ class M3u8Downloader:
     @classmethod
     def get_m3u8(cls, url, proxies=""):
         base_url = url.rsplit("/", 1)[0]
+        domain_url = re.search(r"(https?://.*?/)", url).group(1)[:-1]
+
+        def _make_url(url_):
+            if url_.startswith("http"):
+                return url_
+            elif url_.startswith("/"):
+                return domain_url + url_
+            else:
+                return base_url + "/" + url_
+
         req = requests.get(
             url,
             headers=REQ_HEADERS, timeout=10, proxies={"http": proxies, "https": proxies}
@@ -79,8 +89,7 @@ class M3u8Downloader:
             re_result = re.search(re_pattern, req_text)
             key_method = re_result.group(1)
             key_url = re_result.group(2)
-            if not key_url.startswith("http"):
-                key_url = base_url + "/" + key_url
+            key_url = _make_url(key_url)
             key_content = requests.get(
                 key_url,
                 headers=REQ_HEADERS, timeout=10, proxies={"http": proxies, "https": proxies}
@@ -94,10 +103,7 @@ class M3u8Downloader:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            if line.startswith("http"):
-                urls.append(line)
-            else:
-                urls.append(base_url + "/" + line)
+            urls.append(_make_url(line))
         return urls, key_method, key_content
 
     @staticmethod
